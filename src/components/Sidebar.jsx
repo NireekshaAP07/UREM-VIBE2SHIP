@@ -7,11 +7,29 @@ import {
   logoutFromGoogle,
   GOOGLE_CLIENT_ID,
 } from '../services/aiService';
+import { useTheme, themes } from './ThemeContext';
 import './Sidebar.css';
 
 const Sidebar = ({ onCalendarConnected, isOpen, setIsOpen }) => {
   const [calendarStatus, setCalendarStatus] = useState('idle'); // idle | connecting | connected | error
   const [userName, setUserName] = useState(null);
+
+  const { currentThemeId, customThemeColors, selectTheme, updateCustomTheme } = useTheme();
+  const [isThemeExpanded, setIsThemeExpanded] = useState(false);
+
+  // Auto-expand theme settings if the theme is set to Custom
+  useEffect(() => {
+    if (currentThemeId === 'custom') {
+      setIsThemeExpanded(true);
+    }
+  }, [currentThemeId]);
+
+  const handleCustomChange = (key, value) => {
+    updateCustomTheme({
+      ...customThemeColors,
+      [key]: value
+    });
+  };
 
   useEffect(() => {
     // Initialize Google API in the background
@@ -72,6 +90,91 @@ const Sidebar = ({ onCalendarConnected, isOpen, setIsOpen }) => {
           <span className="label">Analytics</span>
         </NavLink>
       </nav>
+
+      {/* Theme Customizer Panel */}
+      <div className="sidebar-theme-panel glass-panel-inner">
+        <div className="theme-panel-header" onClick={() => setIsThemeExpanded(!isThemeExpanded)}>
+          <div className="panel-title-group">
+            <span className="icon">🎨</span>
+            <span className="panel-title">Theme Settings</span>
+          </div>
+          <span className={`expand-arrow ${isThemeExpanded ? 'open' : ''}`}>▼</span>
+        </div>
+        
+        {isThemeExpanded && (
+          <div className="theme-panel-content">
+            <div className="preset-dots-container">
+              {Object.values(themes).map((theme) => {
+                const isActive = currentThemeId === theme.id;
+                const colors = theme.id === 'custom' ? customThemeColors : theme.colors;
+                return (
+                  <button
+                    key={theme.id}
+                    className={`preset-dot-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => selectTheme(theme.id)}
+                    title={theme.name}
+                    style={{
+                      background: `linear-gradient(135deg, ${colors.accentPrimary}, ${colors.accentSecondary})`
+                    }}
+                  >
+                    {isActive && <span className="active-dot-indicator" />}
+                  </button>
+                );
+              })}
+            </div>
+            
+            {currentThemeId === 'custom' && (
+              <div className="sidebar-custom-pickers">
+                <div className="sidebar-picker-field">
+                  <input
+                    type="color"
+                    id="picker-bg"
+                    value={customThemeColors.bg}
+                    onChange={(e) => handleCustomChange('bg', e.target.value)}
+                  />
+                  <label htmlFor="picker-bg">Bg</label>
+                </div>
+                <div className="sidebar-picker-field">
+                  <input
+                    type="color"
+                    id="picker-text"
+                    value={customThemeColors.textPrimary}
+                    onChange={(e) => handleCustomChange('textPrimary', e.target.value)}
+                  />
+                  <label htmlFor="picker-text">Txt</label>
+                </div>
+                <div className="sidebar-picker-field">
+                  <input
+                    type="color"
+                    id="picker-primary"
+                    value={customThemeColors.accentPrimary}
+                    onChange={(e) => handleCustomChange('accentPrimary', e.target.value)}
+                  />
+                  <label htmlFor="picker-primary">Pri</label>
+                </div>
+                <div className="sidebar-picker-field">
+                  <input
+                    type="color"
+                    id="picker-secondary"
+                    value={customThemeColors.accentSecondary}
+                    onChange={(e) => handleCustomChange('accentSecondary', e.target.value)}
+                  />
+                  <label htmlFor="picker-secondary">Sec</label>
+                </div>
+                <div className="sidebar-picker-field">
+                  <input
+                    type="color"
+                    id="picker-tertiary"
+                    value={customThemeColors.accentTertiary}
+                    onChange={(e) => handleCustomChange('accentTertiary', e.target.value)}
+                  />
+                  <label htmlFor="picker-tertiary">Acc</label>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Google Calendar Connection Panel */}
       <div className="calendar-connect-panel glass-panel-inner">
